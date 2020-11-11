@@ -2,11 +2,13 @@ import enum
 import json
 import time
 import typing as t
+from datetime import timedelta
 
 import structlog
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.urls import reverse
+from django.utils import timezone
 from google.cloud.tasks_v2 import CloudTasksClient
 
 log = structlog.get_logger()
@@ -49,6 +51,34 @@ class Task:
         return self.f(*args, **kwargs)
 
     def enqueue(self, *args, **kwargs):
+        """
+        Schedule a task to be run ASAP.
+        :param args: receiver method args
+        :param kwargs: receiver method kwargs
+        """
+        return self.enqueue_later(None, *args, **kwargs)
+
+    @t.overload
+    def enqueue_later(self, countdown: t.Optional[int], *args, **kwargs):
+        """
+        Schedule a task to be run after `countdown` seconds.
+        :param countdown: delay in seconds for task execution
+        :param args: receiver method args
+        :param kwargs: receiver method kwargs
+        """
+        ...
+
+    @t.overload
+    def enqueue_later(self, countdown: t.Optional[timedelta], *args, **kwargs):  # noqa: F811
+        """
+        Schedule a task to be run after `countdown` duration.
+        :param countdown: delay for task execution
+        :param args: receiver method args
+        :param kwargs: receiver method kwargs
+        """
+        ...
+
+    def enqueue_later(self, countdown, *args, **kwargs):  # noqa: F811
         client = self.get_client()
         parent = client.queue_path(settings.PROJECT_ID, settings.PROJECT_REGION, self.queue)
         body = {
@@ -61,6 +91,10 @@ class Task:
                 ).encode("utf-8"),
             },
         }
+        if countdown is not None:
+            if isinstance(countdown, int):
+                countdown = timedelta(seconds=countdown)
+            body["scheduleTime"] = (timezone.now() + countdown).isoformat()
         response = self.get_client().create_task(parent, body)
         log.info("tasks.queued", name=self.name, task_id=response.name)
         return response
@@ -82,9 +116,28 @@ def get_task_class() -> t.Type[Task]:
     return Task
 
 
-def register_task(
-    should_retry=True, queue=settings.TASK_DEFAULT_QUEUE, schedule=None
-) -> t.Union[Task, t.Callable[[t.Callable], Task]]:
+TaskDecorator = t.TypeVar("TaskDecorator", bound=t.Callable[..., t.Any])
+
+
+@t.overload
+def register_task(f: TaskDecorator) -> Task:
+    ...
+
+
+@t.overload
+def register_task(  # noqa: F811
+    should_retry: bool = True,
+    queue: str = settings.TASK_DEFAULT_QUEUE,
+    schedule: t.Optional[str] = None,
+) -> t.Callable[[TaskDecorator], TaskDecorator]:
+    ...
+
+
+def register_task(  # noqa: F811
+    should_retry: bool = True,
+    queue: str = settings.TASK_DEFAULT_QUEUE,
+    schedule: t.Optional[str] = None,
+):
     def do_register(f, _should_retry, _queue) -> Task:
         task = get_task_class()(f, _queue, should_retry=_should_retry)
         registry[task.name] = task
