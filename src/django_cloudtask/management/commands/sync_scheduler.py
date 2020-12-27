@@ -58,7 +58,8 @@ class Command(BaseCommand):
                         client.resume_job(name)
 
                     client.update_job(
-                        job, field_mask(None, job),
+                        job,
+                        field_mask(None, job),
                     )
 
                     if existing_config[name][2] == JobEnum.State.PAUSED:
@@ -67,7 +68,9 @@ class Command(BaseCommand):
             else:
                 # new task was created
                 log.info(
-                    "sync_scheduler.create", task_id=task_id, schedule=schedule,
+                    "sync_scheduler.create",
+                    task_id=task_id,
+                    schedule=schedule,
                 )
                 client.create_job(
                     parent,
