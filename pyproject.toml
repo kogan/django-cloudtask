@@ -1,16 +1,5 @@
 [tool.isort]
-combine_as_imports = true
-default_section = "FIRSTPARTY"
-line_length = 100
-multi_line_output = 3
-force_grid_wrap = 0
-include_trailing_comma = true
-not_skip = "__init__.py"
-skip = "migrations"
-known_third_party = ["django"]
-known_first_party = [
-    "django_cloudtask",
-]
+profile = "black"
 
 [tool.black]
 line-length = 120
