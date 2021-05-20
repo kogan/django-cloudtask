@@ -59,26 +59,6 @@ class Task:
         """
         return self.enqueue_later(None, *args, **kwargs)
 
-    @t.overload
-    def enqueue_later(self, countdown: t.Optional[int], *args, **kwargs):
-        """
-        Schedule a task to be run after `countdown` seconds.
-        :param countdown: delay in seconds for task execution
-        :param args: receiver method args
-        :param kwargs: receiver method kwargs
-        """
-        ...
-
-    @t.overload
-    def enqueue_later(self, countdown: t.Optional[timedelta], *args, **kwargs):  # noqa: F811
-        """
-        Schedule a task to be run after `countdown` duration.
-        :param countdown: delay for task execution
-        :param args: receiver method args
-        :param kwargs: receiver method kwargs
-        """
-        ...
-
     def enqueue_later(self, countdown, *args, **kwargs):  # noqa: F811
         client = self.get_client()
         parent = client.queue_path(settings.PROJECT_ID, settings.PROJECT_REGION, self.queue)
@@ -105,6 +85,26 @@ class Task:
         response = self.get_client().create_task(parent, body)
         log.info("tasks.queued", name=self.name, task_id=response.name)
         return response
+
+    @t.overload
+    def enqueue_later(self, countdown: t.Optional[int], *args, **kwargs):  # noqa: F811
+        """
+        Schedule a task to be run after `countdown` seconds.
+        :param countdown: delay in seconds for task execution
+        :param args: receiver method args
+        :param kwargs: receiver method kwargs
+        """
+        ...
+
+    @t.overload
+    def enqueue_later(self, countdown: t.Optional[timedelta], *args, **kwargs):  # noqa: F811
+        """
+        Schedule a task to be run after `countdown` duration.
+        :param countdown: delay for task execution
+        :param args: receiver method args
+        :param kwargs: receiver method kwargs
+        """
+        ...
 
 
 class DebugTask(Task):
@@ -175,7 +175,7 @@ def execute_task(name, args, kwargs) -> TaskResponse:
     except RetryTaskException:
         log.info("task.force_retry", name=name)
         return TaskResponse.RETRY
-    except Exception:
+    except Exception:  # noqa: B902
         log.exception("task.crash", name=name, should_retry=task.should_retry)
         if task.should_retry:
             return TaskResponse.FAIL
