@@ -86,7 +86,7 @@ class Command(BaseCommand):
                             },
                             "uri": f"https://{settings.TASK_DOMAIN}{reverse('task-execute')}",
                         },
-                        "time_zone": "Australia/Melbourne",
+                        "time_zone": settings.TIME_ZONE,
                     },
                 )
 

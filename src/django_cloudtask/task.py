@@ -10,6 +10,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.urls import reverse
 from django.utils import timezone
 from google.cloud.tasks_v2 import CloudTasksClient
+from google.protobuf.timestamp_pb2 import Timestamp
 
 log = structlog.get_logger()
 registry = {}
@@ -94,7 +95,13 @@ class Task:
         if countdown is not None:
             if isinstance(countdown, int):
                 countdown = timedelta(seconds=countdown)
-            body["scheduleTime"] = (timezone.now() + countdown).isoformat()
+
+            # https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues.tasks#Task
+            t = (timezone.now() + countdown).timestamp()
+            seconds = int(t)
+            nanos = int(t % 1 * 1e9)
+            proto_timestamp = Timestamp(seconds=seconds, nanos=nanos)
+            body["schedule_time"] = proto_timestamp
         response = self.get_client().create_task(parent, body)
         log.info("tasks.queued", name=self.name, task_id=response.name)
         return response

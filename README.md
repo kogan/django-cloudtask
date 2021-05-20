@@ -79,7 +79,7 @@ def scheduled_task():
 
 ### Calling a task
 
-Tasks may be scheduled by calling `enqueue(*args, **kwargs)`.
+Tasks may be scheduled for immediate execution by calling `enqueue(*args, **kwargs)`.
 
 `args` and `kwargs` must be JSON serialisable.
 
@@ -95,6 +95,14 @@ my_task.enqueue(1, "start the task", kwarg=True)
 # execute immediately
 scheduled_task()
 ```
+
+### Scheduling a task to run in the future
+
+Tasks may be scheduled for the future by calling `enqueue_later(countdown, *args, **kwargs)`.
+
+Countdown may either be an `int` (as number of seconds) or a `timedelta` object.
+
+`args` and `kwargs` must be JSON serialisable.
 
 
 ## Contributing
