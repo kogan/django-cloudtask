@@ -47,7 +47,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.6"
-django = "^2.2.12"
+django = ">=2.2, <4"
 structlog = "^20.1.0"
 django-structlog = "^1.5.2"
 google-cloud-scheduler = "^1.3.0"
