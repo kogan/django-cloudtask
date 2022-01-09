@@ -53,6 +53,7 @@ django-structlog = "^1.5.2"
 google-cloud-scheduler = "^1.3.0"
 google-cloud-tasks = "^1.5.0"
 google-api-core = "^1.14.2"
+setuptools = "57.4.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^19.10b0",allows-prereleases = true}
@@ -66,6 +67,7 @@ isort = "^4.3"
 pre-commit = "^1.15"
 pytest = "^5.3"
 pytest-django = "^3.8"
+
 
 [build-system]
 requires = ["poetry>=1.0.2"]
